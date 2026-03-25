@@ -1,5 +1,7 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService, Event, User } from '@/services/api';
+import { getImageSource } from '@/utils/imageUtils';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -7,6 +9,7 @@ import {
     FlatList,
     Image,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -93,20 +96,34 @@ export default function EventDetailScreen() {
     return clients.some(client => client.id === user?.id);
   };
 
+  const getInitials = (prenom: string, nom: string) => {
+    const firstLetter = prenom ? prenom.charAt(0).toUpperCase() : '';
+    const lastLetter = nom ? nom.charAt(0).toUpperCase() : '';
+    return firstLetter + lastLetter;
+  };
+
   const renderClientItem = ({ item }: { item: User }) => (
     <View style={styles.clientCard}>
+      <View style={styles.clientAvatar}>
+        <Text style={styles.clientInitials}>{getInitials(item.prenom, item.nom)}</Text>
+      </View>
       <View style={styles.clientInfo}>
         <Text style={styles.clientName}>{item.prenom} {item.nom}</Text>
         <Text style={styles.clientEmail}>{item.email}</Text>
-        {item.tel && <Text style={styles.clientPhone}>{item.tel}</Text>}
       </View>
+      {isUserRegistered() && item.id === user?.id && (
+        <View style={styles.meBadge}>
+          <Text style={styles.meBadgeText}>Moi</Text>
+        </View>
+      )}
     </View>
   );
 
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <Text>Chargement...</Text>
+        <StatusBar barStyle="dark-content" />
+        <Text style={styles.loadingText}>Chargement des détails...</Text>
       </View>
     );
   }
@@ -120,175 +137,323 @@ export default function EventDetailScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Retour</Text>
-        </TouchableOpacity>
-      </View>
-
-      {event.image && (
-        <Image source={{ uri: event.image }} style={styles.eventImage} />
-      )}
-
-      <View style={styles.content}>
-        <Text style={styles.eventTitle}>{event.nom}</Text>
-        
-        {event.date && (
-          <View style={styles.infoSection}>
-            <Text style={styles.infoLabel}>Date et heure</Text>
-            <Text style={styles.infoValue}>{formatDate(event.date)}</Text>
-          </View>
-        )}
-        
-        {event.adresse && (
-          <View style={styles.infoSection}>
-            <Text style={styles.infoLabel}>Adresse</Text>
-            <Text style={styles.infoValue}>{event.adresse}</Text>
-          </View>
-        )}
-
-        <View style={styles.infoSection}>
-          <Text style={styles.infoLabel}>Participants</Text>
-          <Text style={styles.infoValue}>{clients.length} inscrit(s)</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+        <View style={styles.imageContainer}>
+          {event.image ? (
+            <Image source={getImageSource(event.image) || { uri: event.image }} style={styles.eventImage} />
+          ) : (
+            <View style={[styles.eventImage, styles.placeholderImage]}>
+              <MaterialCommunityIcons name="image-off-outline" size={60} color="#DDD" />
+            </View>
+          )}
+          <View style={styles.imageOverlay} />
+          
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="chevron-left" size={30} color="white" />
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.registerButton,
-            isUserRegistered() && styles.registeredButton
-          ]}
-          onPress={handleRegisterToEvent}
-        >
-          <Text style={[
-            styles.registerButtonText,
-            isUserRegistered() && styles.registeredButtonText
-          ]}>
-            {isUserRegistered() ? 'Déjà inscrit' : 'S\'inscrire à cet événement'}
-          </Text>
-        </TouchableOpacity>
-
-        {clients.length > 0 && (
-          <View style={styles.participantsSection}>
-            <Text style={styles.participantsTitle}>Liste des participants</Text>
-            <FlatList
-              data={clients}
-              renderItem={renderClientItem}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
+        <View style={styles.contentCard}>
+          <Text style={styles.eventTitle}>{event.nom}</Text>
+          
+          <View style={styles.infoRow}>
+            <View style={styles.infoIconContainer}>
+              <MaterialCommunityIcons name="calendar-clock" size={24} color="#4A90E2" />
+            </View>
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Date et Heure</Text>
+              <Text style={styles.infoValue}>{formatDate(event.date)}</Text>
+            </View>
           </View>
-        )}
-      </View>
-    </ScrollView>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoIconContainer}>
+              <MaterialCommunityIcons name="map-marker-radius" size={24} color="#4A90E2" />
+            </View>
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Lieu</Text>
+              <Text style={styles.infoValue}>{event.adresse || 'Lieu non spécifié'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoIconContainer}>
+              <MaterialCommunityIcons name="account-group" size={24} color="#4A90E2" />
+            </View>
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Inscriptions</Text>
+              <Text style={styles.infoValue}>{clients.length} participant(s) inscrit(s)</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.registerButton,
+              isUserRegistered() && styles.registeredButton
+            ]}
+            onPress={handleRegisterToEvent}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons 
+              name={isUserRegistered() ? "check-circle" : "plus-circle"} 
+              size={24} 
+              color="white" 
+              style={styles.btnIcon} 
+            />
+            <Text style={styles.registerButtonText}>
+              {isUserRegistered() ? 'Vous êtes inscrit' : 'S\'inscrire à l\'événement'}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <View style={styles.participantsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Participants</Text>
+              <View style={styles.countBadge}>
+                <Text style={styles.countBadgeText}>{clients.length}</Text>
+              </View>
+            </View>
+            
+            {clients.length > 0 ? (
+              <FlatList
+                data={clients}
+                renderItem={renderClientItem}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                contentContainerStyle={styles.clientList}
+              />
+            ) : (
+              <View style={styles.emptyParticipants}>
+                <MaterialCommunityIcons name="account-search-outline" size={48} color="#CCC" />
+                <Text style={styles.emptyText}>Aucun participant pour le moment</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8F9FA',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  header: {
-    padding: 20,
-    paddingTop: 50,
     backgroundColor: 'white',
   },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
+  loadingText: {
+    marginTop: 12,
+    color: '#666',
     fontSize: 16,
-    color: '#4A90E2',
+  },
+  imageContainer: {
+    position: 'relative',
+    height: 300,
+    width: '100%',
   },
   eventImage: {
     width: '100%',
-    height: 250,
+    height: '100%',
   },
-  content: {
-    padding: 20,
+  placeholderImage: {
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  contentCard: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -30,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
   },
   eventTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '900',
+    color: '#1A1A1A',
+    marginBottom: 24,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  infoSection: {
-    marginBottom: 20,
+  infoIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F0F7FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  infoTextContainer: {
+    flex: 1,
   },
   infoLabel: {
-    fontSize: 16,
+    fontSize: 12,
+    color: '#999',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     fontWeight: '600',
-    color: '#666',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   infoValue: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#333',
+    fontWeight: '600',
   },
   registerButton: {
     backgroundColor: '#4A90E2',
-    padding: 16,
-    borderRadius: 12,
+    height: 60,
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
+    marginTop: 12,
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   registeredButton: {
     backgroundColor: '#28A745',
+    shadowColor: '#28A745',
+  },
+  btnIcon: {
+    marginRight: 10,
   },
   registerButtonText: {
     color: 'white',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
-  registeredButtonText: {
-    color: 'white',
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 30,
   },
   participantsSection: {
-    marginTop: 20,
+    paddingBottom: 40,
   },
-  participantsTitle: {
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
+    fontWeight: '800',
+    color: '#1A1A1A',
+  },
+  countBadge: {
+    backgroundColor: '#F0F7FF',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  countBadgeText: {
+    color: '#4A90E2',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  clientList: {
+    paddingBottom: 20,
   },
   clientCard: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  clientAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#A0C4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  clientInitials: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '700',
   },
   clientInfo: {
     flex: 1,
   },
   clientName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontWeight: '700',
+    color: '#1A1A1A',
   },
   clientEmail: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    marginBottom: 2,
   },
-  clientPhone: {
+  meBadge: {
+    backgroundColor: '#E7F3FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  meBadgeText: {
+    color: '#4A90E2',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  emptyParticipants: {
+    alignItems: 'center',
+    paddingVertical: 30,
+  },
+  emptyText: {
+    marginTop: 10,
+    color: '#999',
     fontSize: 14,
-    color: '#666',
+  },
+});
+lor: '#666',
   },
 });

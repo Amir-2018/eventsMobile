@@ -1,7 +1,45 @@
 import { Platform } from 'react-native';
 
-// Workaround for TypeScript module resolution issue
-const SecureStore = require('expo-secure-store');
+// Import conditionnel pour éviter les erreurs
+let SecureStore: any = null;
+try {
+  SecureStore = require('expo-secure-store');
+} catch (error) {
+  console.warn('expo-secure-store not available, using localStorage fallback');
+}
+
+// Fallback storage pour le web ou si SecureStore n'est pas disponible
+const storage = {
+  async getItemAsync(key: string): Promise<string | null> {
+    if (Platform.OS === 'web' || !SecureStore) {
+      if (typeof localStorage !== 'undefined') {
+        return localStorage.getItem(key);
+      }
+      return null;
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+  
+  async setItemAsync(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web' || !SecureStore) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(key, value);
+      }
+      return;
+    }
+    return await SecureStore.setItemAsync(key, value);
+  },
+  
+  async deleteItemAsync(key: string): Promise<void> {
+    if (Platform.OS === 'web' || !SecureStore) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+      return;
+    }
+    return await SecureStore.deleteItemAsync(key);
+  }
+};
 
 // Configuration de l'API selon l'environnement
 const getBaseURL = () => {
@@ -9,7 +47,7 @@ const getBaseURL = () => {
     // Utiliser l'IP du PC pour permettre la connexion depuis l'appareil mobile
     return 'http://192.168.43.219:3000';
   }
-  return 'http://localhost:3000';
+  return 'http://192.168.43.219:3000';
 };
 
 const BASE_URL = getBaseURL();
@@ -42,15 +80,15 @@ export interface ApiResponse<T> {
 
 class ApiService {
   private async getToken(): Promise<string | null> {
-    return await SecureStore.getItemAsync('userToken');
+    return await storage.getItemAsync('userToken');
   }
 
   private async setToken(token: string): Promise<void> {
-    await SecureStore.setItemAsync('userToken', token);
+    await storage.setItemAsync('userToken', token);
   }
 
   private async removeToken(): Promise<void> {
-    await SecureStore.deleteItemAsync('userToken');
+    await storage.deleteItemAsync('userToken');
   }
 
   private async makeRequest<T>(

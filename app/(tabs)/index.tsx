@@ -1,5 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { apiService, Event } from '@/services/api';
+import { apiService, Event, User } from '@/services/api';
+import { getImageSource } from '@/utils/imageUtils';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -116,68 +118,72 @@ export default function HomeScreen() {
     </View>
   );
 
-  const renderEventItem = ({ item }: { item: Event }) => (
-    <View style={styles.eventCard}>
-      {item.image && (
-        <Image source={{ uri: item.image }} style={styles.eventImage} />
-      )}
-      
-      <View style={styles.eventContent}>
-        <Text style={styles.eventTitle}>{item.nom}</Text>
-        
-        {item.date && (
-          <Text style={styles.eventDate}>{formatDate(item.date)}</Text>
+  const renderEventItem = ({ item }: { item: Event }) => {
+    const imageSource = getImageSource(item.image);
+    
+    return (
+      <View style={styles.eventCard}>
+        {imageSource && (
+          <Image source={imageSource} style={styles.eventImage} />
         )}
         
-        {item.adresse && (
-          <Text style={styles.eventAddress}>{item.adresse}</Text>
-        )}
-        
-        <View style={styles.participantsSection}>
-          <Text style={styles.participantsCount}>
-            {item.clients?.length || 0} participant(s)
-          </Text>
+        <View style={styles.eventContent}>
+          <Text style={styles.eventTitle}>{item.nom}</Text>
           
-          {item.clients && item.clients.length > 0 && (
-            <View style={styles.participantsContainer}>
-              {item.clients.slice(0, 5).map((participant, index) => 
-                renderParticipantCircle(participant, index)
-              )}
-              {item.clients.length > 5 && (
-                <View style={[styles.participantCircle, styles.moreParticipants, { marginLeft: -8 }]}>
-                  <Text style={styles.participantInitials}>+{item.clients.length - 5}</Text>
-                </View>
-              )}
-            </View>
+          {item.date && (
+            <Text style={styles.eventDate}>{formatDate(item.date)}</Text>
           )}
-        </View>
-        
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={() => handleEventPress(item)}
-          >
-            <Text style={styles.detailsButtonText}>Voir détails</Text>
-          </TouchableOpacity>
           
-          <TouchableOpacity
-            style={[
-              styles.registerButton,
-              isUserRegistered(item) && styles.registeredButton
-            ]}
-            onPress={() => handleRegisterToEvent(item.id)}
-          >
-            <Text style={[
-              styles.registerButtonText,
-              isUserRegistered(item) && styles.registeredButtonText
-            ]}>
-              {isUserRegistered(item) ? 'Inscrit' : 'S\'inscrire'}
+          {item.adresse && (
+            <Text style={styles.eventAddress}>{item.adresse}</Text>
+          )}
+          
+          <View style={styles.participantsSection}>
+            <Text style={styles.participantsCount}>
+              {item.clients?.length || 0} participant(s)
             </Text>
-          </TouchableOpacity>
+            
+            {item.clients && item.clients.length > 0 && (
+              <View style={styles.participantsContainer}>
+                {item.clients.slice(0, 5).map((participant, index) => 
+                  renderParticipantCircle(participant, index)
+                )}
+                {item.clients.length > 5 && (
+                  <View style={[styles.participantCircle, styles.moreParticipants, { marginLeft: -8 }]}>
+                    <Text style={styles.participantInitials}>+{item.clients.length - 5}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.detailsButton}
+              onPress={() => handleEventPress(item)}
+            >
+              <Text style={styles.detailsButtonText}>Voir détails</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.registerButton,
+                isUserRegistered(item) && styles.registeredButton
+              ]}
+              onPress={() => handleRegisterToEvent(item.id)}
+            >
+              <Text style={[
+                styles.registerButtonText,
+                isUserRegistered(item) && styles.registeredButtonText
+              ]}>
+                {isUserRegistered(item) ? 'Inscrit' : 'S\'inscrire'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   if (isLoading) {
     return (
@@ -190,11 +196,19 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>
-          {user ? getInitials(user.prenom, user.nom) : 'Bonjour'}
-        </Text>
+        <View style={styles.userProfile}>
+          <View style={[styles.participantCircle, styles.userAvatar]}>
+            <Text style={styles.participantInitials}>
+              {user ? getInitials(user.prenom, user.nom) : '??'}
+            </Text>
+          </View>
+          <View>
+            <Text style={styles.welcomeLabel}>Bonjour,</Text>
+            <Text style={styles.userName}>{user ? `${user.prenom} ${user.nom}` : 'Utilisateur'}</Text>
+          </View>
+        </View>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Déconnexion</Text>
+          <MaterialCommunityIcons name="logout" size={24} color="#FF6B6B" />
         </TouchableOpacity>
       </View>
 
@@ -229,20 +243,39 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 50,
+    paddingTop: 60,
     backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  welcomeText: {
+  userProfile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  userAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+    backgroundColor: '#4A90E2',
+    borderWidth: 0,
+  },
+  welcomeLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  userName: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#333',
   },
   logoutButton: {
-    padding: 8,
-  },
-  logoutText: {
-    color: '#FF6B6B',
-    fontSize: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 24,
