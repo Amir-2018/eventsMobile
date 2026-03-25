@@ -104,10 +104,33 @@ export default function HomeScreen() {
     return event.clients?.some(client => client.id === user?.id);
   };
 
-  const getInitials = (prenom: string, nom: string) => {
-    const firstLetter = prenom ? prenom.charAt(0).toUpperCase() : '';
-    const lastLetter = nom ? nom.charAt(0).toUpperCase() : '';
-    return firstLetter + lastLetter;
+  const getInitials = (prenom?: string, nom?: string) => {
+    console.log('getInitials called with:', { prenom, nom }); // Debug
+    
+    if (!prenom && !nom) return '??';
+    
+    let initials = '';
+    
+    if (prenom && prenom.trim().length > 0) {
+      initials += prenom.trim().charAt(0).toUpperCase();
+    }
+    
+    if (nom && nom.trim().length > 0) {
+      initials += nom.trim().charAt(0).toUpperCase();
+    }
+    
+    // Si on n'a qu'une seule lettre, on essaie de prendre la deuxième du même mot
+    if (initials.length === 1) {
+      if (prenom && prenom.trim().length > 1) {
+        initials += prenom.trim().charAt(1).toUpperCase();
+      } else if (nom && nom.trim().length > 1) {
+        initials += nom.trim().charAt(1).toUpperCase();
+      } else {
+        initials += initials; // Double la lettre si pas d'autre option
+      }
+    }
+    
+    return initials || '??';
   };
 
   const renderParticipantCircle = (participant: User, index: number) => (
@@ -202,10 +225,11 @@ export default function HomeScreen() {
               {user ? getInitials(user.prenom, user.nom) : '??'}
             </Text>
           </View>
-          <View>
-            <Text style={styles.welcomeLabel}>Bonjour,</Text>
-            <Text style={styles.userName}>{user ? `${user.prenom} ${user.nom}` : 'Utilisateur'}</Text>
-          </View>
+          {user && (
+            <View>
+              <Text style={styles.userName}>{`${user.prenom} ${user.nom}`}</Text>
+            </View>
+          )}
         </View>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
           <MaterialCommunityIcons name="logout" size={24} color="#FF6B6B" />
@@ -259,10 +283,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
     backgroundColor: '#4A90E2',
     borderWidth: 0,
-  },
-  welcomeLabel: {
-    fontSize: 14,
-    color: '#666',
   },
   userName: {
     fontSize: 18,
