@@ -1,50 +1,115 @@
-# Welcome to your Expo app 👋
+# Gestion des Événements - React Native App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Une application mobile React Native pour la gestion d'événements avec inscription des utilisateurs.
 
-## Get started
+## Fonctionnalités
 
-1. Install dependencies
+- **Authentification** : Inscription et connexion des utilisateurs
+- **Gestion des événements** : Affichage de tous les événements disponibles
+- **Inscription aux événements** : Les utilisateurs peuvent s'inscrire aux événements
+- **Détails des événements** : Vue détaillée avec liste des participants
+- **Création d'événements** : Interface pour créer de nouveaux événements
+- **Upload d'images** : Support pour les images d'événements
 
+## Configuration de l'API
+
+L'application est configurée pour se connecter à l'API backend à l'adresse :
+
+- **Toutes les plateformes** : `http://192.168.43.219:3000`
+
+> **Note** : Assurez-vous que votre serveur API backend est démarré sur le port 3000 et accessible depuis cette adresse IP.
+
+## Installation
+
+1. Cloner le projet
+2. Installer les dépendances :
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. Installer les nouvelles dépendances ajoutées :
    ```bash
-   npx expo start
+   npx expo install expo-secure-store expo-image-picker
    ```
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Lancement
 
 ```bash
-npm run reset-project
+# Démarrer le serveur de développement
+npm start
+
+# Pour Android
+npm run android
+
+# Pour iOS
+npm run ios
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Structure de l'application
 
-## Learn more
+### Écrans principaux
 
-To learn more about developing your project with Expo, look at the following resources:
+1. **Splash Screen** (`app/splash.tsx`)
+   - Écran de démarrage avec logo
+   - Redirection automatique selon l'état d'authentification
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+2. **Authentification**
+   - **Connexion** (`app/auth/login.tsx`)
+   - **Inscription** (`app/auth/register.tsx`)
 
-## Join the community
+3. **Événements**
+   - **Liste des événements** (`app/(tabs)/index.tsx`)
+   - **Détails d'un événement** (`app/event/[id].tsx`)
+   - **Création d'événement** (`app/create-event.tsx`)
 
-Join our community of developers creating universal apps.
+### Services
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **API Service** (`services/api.ts`) : Gestion de toutes les requêtes API
+- **Auth Context** (`contexts/AuthContext.tsx`) : Gestion de l'état d'authentification
+
+### Fonctionnalités implémentées
+
+#### Authentification
+- Inscription avec validation des champs
+- Connexion avec gestion des erreurs
+- Stockage sécurisé du token JWT
+- Déconnexion automatique en cas d'erreur 401
+
+#### Gestion des événements
+- Affichage de la liste des événements avec images
+- Pull-to-refresh pour actualiser
+- Inscription/désinscription aux événements
+- Indicateur visuel pour les événements où l'utilisateur est inscrit
+
+#### Interface utilisateur
+- Design moderne avec Material Design
+- Navigation fluide avec Expo Router
+- Gestion des états de chargement
+- Messages d'erreur et de succès
+
+## API Endpoints utilisés
+
+L'application utilise tous les endpoints documentés dans l'API :
+
+- `POST /api/auth/register` - Inscription
+- `POST /api/auth/login` - Connexion
+- `GET /api/events` - Liste des événements
+- `GET /api/events/{id}` - Détails d'un événement
+- `POST /api/events` - Création d'événement
+- `POST /api/events/{id}/register` - Inscription à un événement
+- `GET /api/events/{id}/clients` - Liste des participants
+- `POST /api/upload/image` - Upload d'image
+
+## Prérequis
+
+- Node.js
+- Expo CLI
+- Un serveur API backend fonctionnel sur le port 3000
+
+## Notes de développement
+
+- L'application utilise Expo Router pour la navigation
+- Le stockage sécurisé est géré par `expo-secure-store`
+- Les images sont gérées avec `expo-image-picker`
+- L'authentification est centralisée via React Context
+- Toutes les requêtes API incluent automatiquement le token JWT quand nécessaire# eventsMobile
