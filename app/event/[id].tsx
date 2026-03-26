@@ -281,11 +281,7 @@ export default function EventDetailScreen() {
 
           {isUserRegistered() && (
             <View style={styles.registeredStatus}>
-              <MaterialCommunityIcons 
-                name="check-circle" 
-                size={24} 
-                color="#28A745" 
-              />
+            
               <Text style={styles.registeredStatusText}>
                 Vous participez à cet événement
               </Text>

@@ -56,8 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🔄 AuthContext login response:', response);
       
       if (response.success && response.data) {
-        setUser(response.data.user);
-        console.log('👤 User set in context:', response.data.user);
+        setUser(response.data.client);
+        console.log('👤 User set in context:', response.data.client);
+        console.log('👤 Connected user ID:', response.data.client.id);
         return { success: true };
       } else {
         console.log('❌ Login failed in AuthContext:', response.message);

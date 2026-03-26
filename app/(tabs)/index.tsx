@@ -15,12 +15,41 @@ import {
     View,
 } from 'react-native';
 
+export const getInitials = (prenom?: string, nom?: string) => {
+  console.log('getInitials called with:', { prenom, nom }); // Debug
+  
+  if (!prenom && !nom) return '??';
+  
+  let initials = '';
+  
+  if (prenom && prenom.trim().length > 0) {
+    initials += prenom.trim().charAt(0).toUpperCase();
+  }
+  
+  if (nom && nom.trim().length > 0) {
+    initials += nom.trim().charAt(0).toUpperCase();
+  }
+  
+  // Si on n'a qu'une seule lettre, on essaie de prendre la deuxième du même mot
+  if (initials.length === 1) {
+    if (prenom && prenom.trim().length > 1) {
+      initials += prenom.trim().charAt(1).toUpperCase();
+    } else if (nom && nom.trim().length > 1) {
+      initials += nom.trim().charAt(1).toUpperCase();
+    } else {
+      initials += initials; // Double la lettre si pas d'autre option
+    }
+  }
+  
+  return initials || '??';
+};
+
 export default function HomeScreen() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const loadEvents = async () => {
@@ -71,24 +100,6 @@ export default function HomeScreen() {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Déconnexion',
-      'Êtes-vous sûr de vouloir vous déconnecter ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { 
-          text: 'Déconnexion', 
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            router.replace('/auth/login');
-          }
-        },
-      ]
-    );
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
@@ -102,35 +113,6 @@ export default function HomeScreen() {
 
   const isUserRegistered = (event: Event) => {
     return event.clients?.some(client => client.id === user?.id);
-  };
-
-  const getInitials = (prenom?: string, nom?: string) => {
-    console.log('getInitials called with:', { prenom, nom }); // Debug
-    
-    if (!prenom && !nom) return '??';
-    
-    let initials = '';
-    
-    if (prenom && prenom.trim().length > 0) {
-      initials += prenom.trim().charAt(0).toUpperCase();
-    }
-    
-    if (nom && nom.trim().length > 0) {
-      initials += nom.trim().charAt(0).toUpperCase();
-    }
-    
-    // Si on n'a qu'une seule lettre, on essaie de prendre la deuxième du même mot
-    if (initials.length === 1) {
-      if (prenom && prenom.trim().length > 1) {
-        initials += prenom.trim().charAt(1).toUpperCase();
-      } else if (nom && nom.trim().length > 1) {
-        initials += nom.trim().charAt(1).toUpperCase();
-      } else {
-        initials += initials; // Double la lettre si pas d'autre option
-      }
-    }
-    
-    return initials || '??';
   };
 
   const renderParticipantCircle = (participant: User, index: number) => (
@@ -218,24 +200,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.userProfile}>
-          <View style={[styles.participantCircle, styles.userAvatar]}>
-            <Text style={styles.participantInitials}>
-              {user ? getInitials(user.prenom, user.nom) : '??'}
-            </Text>
-          </View>
-          {user && (
-            <View>
-              <Text style={styles.userName}>{`${user.prenom} ${user.nom}`}</Text>
-            </View>
-          )}
-        </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <MaterialCommunityIcons name="logout" size={24} color="#FF6B6B" />
-        </TouchableOpacity>
-      </View>
-
       <Text style={styles.title}>Événements disponibles</Text>
       
       <FlatList
@@ -262,45 +226,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  userProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-    backgroundColor: '#4A90E2',
-    borderWidth: 0,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-  },
-  logoutButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     padding: 20,
+    paddingTop: 60,
     color: '#333',
   },
   listContainer: {
