@@ -36,13 +36,8 @@ L'application est configurée pour se connecter à l'API backend à l'adresse :
 
 ```bash
 # Démarrer le serveur de développement
-npm start
-
-# Pour Android
-npm run android
-
-# Pour iOS
-npm run ios
+npx expo start
+scan qr code 
 ```
 
 ## Structure de l'application
@@ -100,11 +95,7 @@ L'application utilise tous les endpoints documentés dans l'API :
 - `GET /api/events/{id}/clients` - Liste des participants
 - `POST /api/upload/image` - Upload d'image
 
-## Prérequis
 
-- Node.js
-- Expo CLI
-- Un serveur API backend fonctionnel sur le port 3000
 
 ## Notes de développement
 
